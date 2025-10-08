@@ -47,18 +47,4 @@ export async function seedDatabase() {
   console.log('📝 Seed completed - database is completely empty and ready for use');
   console.log('👤 Login with: admin / admin123');
   console.log('✨ Application is ready for production use - no test data included');
-
-  // Log seed completion
-  await db.execute('INSERT INTO logs (category, action, entity, payload, actor_user_id) VALUES (?, ?, ?, ?, ?)', [
-    'system',
-    'seed',
-    'database',
-    JSON.stringify({ status: 'completed', version: 1 }),
-    1,
-  ]);
-
-  // Mark seed version 1 as applied
-  await db.execute('INSERT INTO db_version (version) VALUES (1)');
-
-  console.log('Database seeding (version 1) completed successfully');
 }
