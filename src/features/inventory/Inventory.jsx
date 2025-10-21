@@ -21,10 +21,16 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { useAuthStore } from '@/lib/state/authStore';
-import { getAllItems, addItem, addStockToExistingItem, getLowStockItems } from '@/lib/services/inventoryService';
+import {
+  getAllItems,
+  addItem,
+  addStockToExistingItem,
+  getLowStockItems,
+  deleteItem,
+} from '@/lib/services/inventoryService';
 import { createIssue, returnIssue } from '@/lib/services/issueService';
 import { getAllWorkers } from '@/lib/services/workerService';
-import { Package, Plus, Send, Undo2, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Send, Undo2, AlertTriangle, Trash2 } from 'lucide-react';
 
 const UNIT_OPTIONS = ['kom', 'l', 'g', 'kg', 'm', 'par', 'pak'];
 
@@ -47,9 +53,10 @@ export function Inventory() {
       </div>
 
       <Tabs defaultValue="stock" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="stock">Stanje</TabsTrigger>
           <TabsTrigger value="add">Dodaj robu</TabsTrigger>
+          <TabsTrigger value="remove">Obriši artikal</TabsTrigger>
           <TabsTrigger value="issue">Izdaj robu</TabsTrigger>
           <TabsTrigger value="return">Vrati robu</TabsTrigger>
           <TabsTrigger value="low-stock">Za poručivanje</TabsTrigger>
@@ -61,6 +68,10 @@ export function Inventory() {
 
         <TabsContent value="add" className="space-y-4">
           <AddStockTab />
+        </TabsContent>
+
+        <TabsContent value="remove" className="space-y-4">
+          <RemoveStockTab />
         </TabsContent>
 
         <TabsContent value="issue" className="space-y-4">
@@ -83,9 +94,8 @@ function StockTab() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items'],
     queryFn: getAllItems,
-    refetchInterval: 2000, // Automatski refresh svakih 2 sekunde
     refetchOnWindowFocus: true,
-    staleTime: 1000,
+    staleTime: 30000, // 30 sekundi
   });
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -175,9 +185,8 @@ function AddStockTab() {
   const { data: items = [] } = useQuery({
     queryKey: ['items'],
     queryFn: getAllItems,
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 30000,
   });
 
   // New item form
@@ -423,22 +432,185 @@ function AddStockTab() {
   );
 }
 
+function RemoveStockTab() {
+  const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+  const { data: items = [] } = useQuery({
+    queryKey: ['items'],
+    queryFn: getAllItems,
+    refetchOnWindowFocus: true,
+    staleTime: 30000,
+  });
+
+  const [selectedItemId, setSelectedItemId] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const deleteItemMutation = useMutation({
+    mutationFn: (itemId) => deleteItem(itemId, user.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['items']);
+      toast({
+        variant: 'success',
+        title: 'Artikal obrisan',
+        description: 'Artikal je trajno uklonjen iz magacina',
+      });
+      setSelectedItemId('');
+      setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Greška',
+        description: error.message || 'Neuspešno brisanje artikla',
+      });
+      setIsDialogOpen(false);
+    },
+  });
+
+  const handleDelete = () => {
+    if (!selectedItemId) {
+      toast({
+        variant: 'destructive',
+        title: 'Greška',
+        description: 'Izaberite artikal koji želite da obrišete',
+      });
+      return;
+    }
+    setIsDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    deleteItemMutation.mutate(parseInt(selectedItemId));
+  };
+
+  const selectedItem = items.find((i) => i.id.toString() === selectedItemId);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Obriši artikal iz magacina</CardTitle>
+        <CardDescription>Trajno uklanjanje artikla iz sistema (brisanje, otpis, prestanak korišćenja)</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="delete-item">Izaberite artikal *</Label>
+              <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+                <SelectTrigger id="delete-item">
+                  <SelectValue placeholder="Izaberite artikal za brisanje" />
+                </SelectTrigger>
+                <SelectContent>
+                  {items.map((item) => (
+                    <SelectItem key={item.id} value={item.id.toString()}>
+                      {item.name} ({item.sku}) - Stanje: {item.qty_on_hand} {item.uom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedItem && (
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <p className="text-sm font-semibold">Detalji artikla:</p>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Naziv:</span>
+                    <p className="font-medium">{selectedItem.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Kataloški broj:</span>
+                    <p className="font-medium">{selectedItem.sku}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Trenutno stanje:</span>
+                    <p className="font-medium">
+                      {selectedItem.qty_on_hand} {selectedItem.uom}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Minimum:</span>
+                    <p className="font-medium">
+                      {selectedItem.min_qty} {selectedItem.uom}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Alert className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 dark:text-red-200">
+              <strong>UPOZORENJE:</strong> Ova akcija će trajno obrisati artikal iz magacina. Sve povezane informacije
+              (istorija stanja, logovi) će biti uklonjene. Ova akcija se NE MOŽE poništiti!
+            </AlertDescription>
+          </Alert>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="destructive" onClick={handleDelete} disabled={!selectedItemId} className="w-full">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Obriši artikal iz magacina
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-red-600">
+                  <AlertTriangle className="w-5 h-5" />
+                  Potvrdite brisanje
+                </DialogTitle>
+                <DialogDescription>Da li ste apsolutno sigurni da želite da obrišete ovaj artikal?</DialogDescription>
+              </DialogHeader>
+              {selectedItem && (
+                <div className="p-4 bg-muted rounded-lg my-4">
+                  <p className="font-semibold mb-2">Brisanje artikla:</p>
+                  <p className="text-sm">
+                    <strong>{selectedItem.name}</strong> ({selectedItem.sku})
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Stanje: {selectedItem.qty_on_hand} {selectedItem.uom}
+                  </p>
+                </div>
+              )}
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Ovo je trajno brisanje!</strong>
+                  <br />
+                  Artikal će biti potpuno uklonjen iz sistema i ova akcija se ne može poništiti.
+                </AlertDescription>
+              </Alert>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Otkaži
+                </Button>
+                <Button variant="destructive" onClick={confirmDelete} disabled={deleteItemMutation.isPending}>
+                  {deleteItemMutation.isPending ? 'Brisanje...' : 'Da, obriši trajno'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function IssueTab() {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const { data: items = [] } = useQuery({
     queryKey: ['items'],
     queryFn: getAllItems,
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 30000,
   });
   const { data: workers = [] } = useQuery({
     queryKey: ['workers'],
     queryFn: () => getAllWorkers(),
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 30000,
   });
 
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -448,12 +620,18 @@ function IssueTab() {
   const issueMutation = useMutation({
     mutationFn: ({ itemId, workerId, qty }) => createIssue(itemId, workerId, qty, user.id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['items']);
-      queryClient.invalidateQueries(['issues']);
+      // Immediately invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+
+      // Force refetch to show immediately
+      queryClient.refetchQueries({ queryKey: ['items'], exact: false });
+      queryClient.refetchQueries({ queryKey: ['issues'], exact: false });
+
       toast({
         variant: 'success',
-        title: 'Roba zad užena',
-        description: 'Artikal je uspešno zadužen radniku',
+        title: '✅ Roba zadužena',
+        description: 'Artikal je uspešno zadužen radniku i prikazan na Dashboard-u',
       });
       setSelectedItemId('');
       setSelectedWorkerId('');
@@ -570,16 +748,14 @@ function ReturnTab() {
   const { data: items = [] } = useQuery({
     queryKey: ['items'],
     queryFn: getAllItems,
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 30000,
   });
   const { data: workers = [] } = useQuery({
     queryKey: ['workers'],
     queryFn: () => getAllWorkers(),
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 30000,
   });
 
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -589,12 +765,19 @@ function ReturnTab() {
   const returnMutation = useMutation({
     mutationFn: ({ itemId, workerId, qty }) => returnIssue(itemId, workerId, qty, user.id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['items']);
-      queryClient.invalidateQueries(['issues']);
+      // Immediately invalidate and refetch all related queries
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['low-stock'] });
+
+      // Force immediate refetch to update UI
+      queryClient.refetchQueries({ queryKey: ['items'], exact: false });
+      queryClient.refetchQueries({ queryKey: ['issues'], exact: false });
+
       toast({
         variant: 'success',
-        title: 'Roba vraćena',
-        description: 'Artikal je uspešno vraćen u magacin',
+        title: '✅ Roba vraćena',
+        description: 'Artikal je uspešno vraćen u magacin i stanje je ažurirano',
       });
       setSelectedItemId('');
       setSelectedWorkerId('');
@@ -603,8 +786,8 @@ function ReturnTab() {
     onError: (error) => {
       toast({
         variant: 'destructive',
-        title: 'Greška',
-        description: error.message || 'Neuspešno vraćanje',
+        title: '❌ Greška pri vraćanju',
+        description: error.message || 'Neuspešno vraćanje robe u magacin',
       });
     },
   });
@@ -696,9 +879,8 @@ function LowStockTab() {
   const { data: lowStockItems = [], isLoading } = useQuery({
     queryKey: ['low-stock'],
     queryFn: getLowStockItems,
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 60000, // 1 minut
   });
 
   return (

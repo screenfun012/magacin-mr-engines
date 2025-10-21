@@ -5,7 +5,10 @@ let db = null;
 export async function initDatabase() {
   if (!db) {
     db = await Database.load('sqlite:app.db');
+    // Enable foreign keys for SQLite
+    await db.execute('PRAGMA foreign_keys = ON');
     console.log('✅ Database initialized');
+    console.log('🔑 Foreign keys enabled');
     console.log('📁 Database location:');
     console.log('   macOS: ~/Library/Application Support/com.mrengines.magacin/app.db');
     console.log('   Windows: %APPDATA%\\com.mrengines.magacin\\app.db');

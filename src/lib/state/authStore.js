@@ -19,6 +19,10 @@ export const useAuthStore = create(
           user: null,
           isAuthenticated: false,
         });
+        // Force reload to ensure clean state
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       },
 
       isAdmin: () => {
@@ -31,4 +35,3 @@ export const useAuthStore = create(
     }
   )
 );
-

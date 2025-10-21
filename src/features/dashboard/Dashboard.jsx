@@ -23,8 +23,7 @@ import { getMonthlyIssues, updateIssueQty, deleteIssue, getIssueHistory } from '
 import { formatDate, formatDateTime, getMonthYearString } from '@/lib/utils';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import { CalendarIcon, Edit2, Trash2, History, Package } from 'lucide-react';
-import { format } from 'date-fns';
-import { sr } from 'date-fns/locale';
+import { format } from 'date-fns'; // Samo za yearMonth format (yyyy-MM)
 
 export function Dashboard() {
   const user = useAuthStore((state) => state.user);
@@ -41,10 +40,9 @@ export function Dashboard() {
   const { data: issues = [], isLoading } = useQuery({
     queryKey: ['issues', yearMonth],
     queryFn: () => getMonthlyIssues(yearMonth),
-    refetchInterval: 2000, // Automatski refresh svakih 2 sekunde - brzi real-time
-    refetchOnWindowFocus: true, // Refresh kada korisnik vrati fokus na aplikaciju
-    refetchOnMount: true, // Refresh pri montiranju komponente
-    staleTime: 1000, // Podaci se smatraju zastarelim nakon 1 sekunde
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 30000, // 30 sekundi - ne osvežava previše često
   });
 
   const updateMutation = useMutation({
@@ -107,25 +105,30 @@ export function Dashboard() {
       return result;
     },
     onMutate: async (issueId) => {
+      // Close dialog immediately
+      setDeleteConfirm(null);
+
       await queryClient.cancelQueries({ queryKey: ['issues', yearMonth] });
       const previous = queryClient.getQueryData(['issues', yearMonth]);
 
       // Optimistically remove
       queryClient.setQueryData(['issues', yearMonth], (old) => old?.filter((issue) => issue.id !== issueId));
 
-      // Close dialog immediately
-      setDeleteConfirm(null);
-
       return { previous };
     },
     onSuccess: () => {
+      // Immediately invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       queryClient.invalidateQueries({ queryKey: ['items'] });
 
+      // Force immediate refetch to update stock
+      queryClient.refetchQueries({ queryKey: ['items'], exact: false });
+      queryClient.refetchQueries({ queryKey: ['issues'], exact: false });
+
       toast({
-        variant: 'destructive',
-        title: 'Obrisano',
-        description: 'Zaduženje uklonjeno',
+        variant: 'success',
+        title: '✅ Razduženo',
+        description: 'Zaduženje uklonjeno i roba vraćena u magacin',
       });
     },
     onError: (error, variables, context) => {
@@ -134,8 +137,8 @@ export function Dashboard() {
       }
       toast({
         variant: 'destructive',
-        title: 'Greška',
-        description: error.message || 'Neuspešno brisanje',
+        title: '❌ Greška pri brisanju',
+        description: error.message || 'Neuspešno brisanje zaduženja',
       });
     },
   });
@@ -206,7 +209,7 @@ export function Dashboard() {
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-64">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedMonth, 'MMMM yyyy', { locale: sr })}
+                {getMonthYearString(selectedMonth)}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -395,9 +398,8 @@ function IssueRow({ issue, onEdit, onDelete }) {
   const { data: history = [] } = useQuery({
     queryKey: ['issue-history', issue.id],
     queryFn: () => getIssueHistory(issue.id),
-    refetchInterval: 2000, // Automatski refresh svakih 2 sekunde
-    refetchOnWindowFocus: true,
-    staleTime: 1000,
+    refetchOnWindowFocus: false, // Ne osvežavaj automatski
+    staleTime: 60000, // 1 minut
     enabled: true,
   });
 

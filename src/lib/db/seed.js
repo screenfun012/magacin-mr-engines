@@ -1,11 +1,11 @@
-import { getDatabase } from './client';
+import { getDatabase, executeQuery, selectQuery } from './client';
 
 export async function seedDatabase() {
   const db = await getDatabase();
 
   try {
     // Check if seed version 1 already applied
-    const versionCheck = await db.select('SELECT version FROM db_version WHERE version = 1');
+    const versionCheck = await selectQuery('SELECT version FROM db_version WHERE version = 1');
     if (versionCheck.length > 0) {
       console.log('Database already seeded (version 1 applied)');
       return;
@@ -16,10 +16,10 @@ export async function seedDatabase() {
 
   try {
     // Double check - if users exist, don't seed
-    const usersCount = await db.select('SELECT COUNT(*) as count FROM users');
+    const usersCount = await selectQuery('SELECT COUNT(*) as count FROM users');
     if (usersCount[0].count > 0) {
       console.log('Database already has users, marking as seeded');
-      await db.execute('INSERT OR IGNORE INTO db_version (version) VALUES (1)');
+      await executeQuery('INSERT OR IGNORE INTO db_version (version) VALUES (1)');
       return;
     }
   } catch (error) {
@@ -31,7 +31,7 @@ export async function seedDatabase() {
 
   // Create only admin user for production
   try {
-    await db.execute('INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)', [
+    await executeQuery('INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)', [
       'admin',
       'admin123',
       'admin',
@@ -42,9 +42,9 @@ export async function seedDatabase() {
   }
 
   // Mark seed version 1 as applied
-  await db.execute('INSERT INTO db_version (version) VALUES (1)');
+  await executeQuery('INSERT INTO db_version (version) VALUES (1)');
 
-  console.log('📝 Seed completed - database is completely empty and ready for use');
+  console.log('📝 Seed completed - database ready with admin user only');
   console.log('👤 Login with: admin / admin123');
-  console.log('✨ Application is ready for production use - no test data included');
+  console.log('✨ Application is ready for production use - NO test materials, workers, or departments');
 }

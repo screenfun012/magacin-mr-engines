@@ -6,7 +6,8 @@ export function cn(...inputs) {
 }
 
 export function formatDate(date) {
-  return new Date(date).toLocaleDateString('sr-RS', {
+  // Koristi sr-Latn-RS za latinicu (ne ćirilicu)
+  return new Date(date).toLocaleDateString('sr-Latn-RS', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -14,19 +15,21 @@ export function formatDate(date) {
 }
 
 export function formatDateTime(date) {
-  return new Date(date).toLocaleString('sr-RS', {
+  // Koristi sr-Latn-RS za latinicu + lokalno vreme (ne UTC)
+  const localDate = new Date(date);
+  return localDate.toLocaleString('sr-Latn-RS', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
   });
 }
 
 export function getMonthYearString(date) {
-  return new Date(date).toLocaleDateString('sr-RS', {
+  return new Date(date).toLocaleDateString('sr-Latn-RS', {
     year: 'numeric',
     month: 'long',
   });
 }
-

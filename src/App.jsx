@@ -17,11 +17,11 @@ import { Admin } from '@/features/admin/Admin';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true, // Omogući automatsko ažuriranje kada korisnik vrati fokus
-      refetchOnMount: true, // Ažuriraj podatke pri montiranju komponente
-      retry: 1, // Ponovi neuspele query-je jednom
-      staleTime: 1000, // Podaci se smatraju zastarelim nakon 1 sekunde
-      cacheTime: 300000, // Cache podatke 5 minuta
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      retry: 2,
+      staleTime: 500,
+      cacheTime: 300000,
     },
   },
 });

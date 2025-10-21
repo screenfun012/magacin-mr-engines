@@ -1,12 +1,43 @@
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
+import { sr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
+
+// Custom Serbian Latin locale
+const srLatn = {
+  ...sr,
+  localize: {
+    ...sr.localize,
+    month: (n) => {
+      const months = [
+        'januar',
+        'februar',
+        'mart',
+        'april',
+        'maj',
+        'jun',
+        'jul',
+        'avgust',
+        'septembar',
+        'oktobar',
+        'novembar',
+        'decembar',
+      ];
+      return months[n];
+    },
+    day: (n) => {
+      const days = ['ned', 'pon', 'uto', 'sre', 'čet', 'pet', 'sub'];
+      return days[n];
+    },
+  },
+};
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
   return (
     <DayPicker
+      locale={srLatn}
       showOutsideDays={showOutsideDays}
       className={cn('p-3', className)}
       classNames={{
@@ -49,4 +80,3 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
 Calendar.displayName = 'Calendar';
 
 export { Calendar };
-

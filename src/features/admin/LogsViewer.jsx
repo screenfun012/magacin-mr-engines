@@ -3,23 +3,39 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { getLogs } from '@/lib/services/logService';
 import { formatDateTime } from '@/lib/utils';
-import { FileText, Filter, RefreshCw } from 'lucide-react';
+import {
+  FileText,
+  Filter,
+  RefreshCw,
+  LogIn,
+  LogOut,
+  Sprout,
+  Package,
+  PackagePlus,
+  PackageCheck,
+  PackageMinus,
+  FileEdit,
+  Trash2,
+  Undo2,
+  UserPlus,
+  Building,
+  Edit3,
+  Plus,
+} from 'lucide-react';
 
 export function LogsViewer() {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: logs = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: logs = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['logs'],
     queryFn: async () => {
       try {
@@ -66,30 +82,31 @@ export function LogsViewer() {
   };
 
   const getActionIcon = (action) => {
-    if (!action) return '📋';
-    
+    if (!action) return FileText;
+
     // Specific actions first
-    if (action === 'login') return '🔐';
-    if (action === 'logout') return '🚪';
-    if (action === 'seed') return '🌱';
-    if (action === 'create_item') return '📦';
-    if (action === 'add_stock') return '📥';
-    if (action === 'create_issue') return '📤';
-    if (action === 'edit_issue') return '✏️';
-    if (action === 'delete_issue') return '🗑️';
-    if (action === 'return_item') return '↩️';
-    if (action === 'create_worker') return '👤';
-    if (action === 'create_department') return '🏢';
-    if (action === 'update_worker') return '✏️';
-    if (action === 'update_department') return '✏️';
-    
+    if (action === 'login') return LogIn;
+    if (action === 'logout') return LogOut;
+    if (action === 'seed' || action === 'create_first_admin') return Sprout;
+    if (action === 'create_item') return Package;
+    if (action === 'add_stock') return PackagePlus;
+    if (action === 'remove_stock') return PackageMinus;
+    if (action === 'create_issue') return PackageCheck;
+    if (action === 'edit_issue') return FileEdit;
+    if (action === 'delete_issue') return Trash2;
+    if (action === 'return_item') return Undo2;
+    if (action === 'create_worker') return UserPlus;
+    if (action === 'create_department') return Building;
+    if (action === 'update_worker') return Edit3;
+    if (action === 'update_department') return Edit3;
+
     // Fallback patterns
-    if (action.includes('create')) return '➕';
-    if (action.includes('edit') || action.includes('update')) return '✏️';
-    if (action.includes('delete')) return '🗑️';
-    if (action.includes('return')) return '↩️';
-    
-    return '📋';
+    if (action.includes('create')) return Plus;
+    if (action.includes('edit') || action.includes('update')) return Edit3;
+    if (action.includes('delete')) return Trash2;
+    if (action.includes('return')) return Undo2;
+
+    return FileText;
   };
 
   return (
@@ -121,7 +138,9 @@ export function LogsViewer() {
             <div className="text-red-500 text-4xl mb-4">⚠️</div>
             <p className="text-lg font-medium">Greška pri učitavanju logova</p>
             <p className="text-sm text-muted-foreground mb-4">{error?.message || 'Nepoznata greška'}</p>
-            <Button variant="outline" onClick={() => refetch()}>Pokušaj ponovo</Button>
+            <Button variant="outline" onClick={() => refetch()}>
+              Pokušaj ponovo
+            </Button>
           </div>
         ) : isLoading ? (
           <div className="text-center py-12">
@@ -139,54 +158,48 @@ export function LogsViewer() {
         ) : (
           <div className="rounded-md border">
             <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Vreme</TableHead>
-                <TableHead className="font-semibold">Kategorija</TableHead>
-                <TableHead className="font-semibold">Akcija</TableHead>
-                <TableHead className="font-semibold">Entitet</TableHead>
-                <TableHead className="font-semibold">Korisnik</TableHead>
-                <TableHead className="font-semibold">Detalji</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLogs.map((log) => {
-                const categoryStyle = getCategoryColor(log.category || 'default');
-                return (
-                  <TableRow key={log.id}>
-                    <TableCell className="text-xs whitespace-nowrap font-mono">
-                      {log.created_at ? formatDateTime(log.created_at) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${categoryStyle.color}`}></div>
-                        <Badge variant={categoryStyle.variant}>
-                          {log.category || 'N/A'}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-base">{getActionIcon(log.action)}</span>
-                        <span className="font-medium">{log.action || '-'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      <code className="px-2 py-1 bg-muted rounded text-xs">{log.entity || '-'}</code>
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">{log.username || 'System'}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-xs truncate font-mono">
-                      {log.payload || '-'}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">Vreme</TableHead>
+                  <TableHead className="font-semibold">Kategorija</TableHead>
+                  <TableHead className="font-semibold">Akcija</TableHead>
+                  <TableHead className="font-semibold">Entitet</TableHead>
+                  <TableHead className="font-semibold">Korisnik</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLogs.map((log) => {
+                  const categoryStyle = getCategoryColor(log.category || 'default');
+                  const Icon = getActionIcon(log.action);
+                  return (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-xs whitespace-nowrap font-mono">
+                        {log.created_at ? formatDateTime(log.created_at) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${categoryStyle.color}`}></div>
+                          <Badge variant={categoryStyle.variant}>{log.category || 'N/A'}</Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Icon className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">{log.action || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <code className="px-2 py-1 bg-muted rounded text-xs">{log.entity || '-'}</code>
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">{log.username || 'System'}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
-

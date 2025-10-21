@@ -101,6 +101,75 @@ export async function addStockToExistingItem(itemId, qty, actorUserId) {
   }
 }
 
+export async function deleteItem(itemId, actorUserId) {
+  try {
+    // Check if item exists
+    const item = await getItemById(itemId);
+    if (!item) {
+      throw new Error('Artikal nije pronađen');
+    }
+
+    // Check if item has active issues (zaduženja)
+    const activeIssues = await selectQuery('SELECT COUNT(*) as count FROM issues WHERE item_id = ? AND is_active = 1', [
+      itemId,
+    ]);
+
+    if (activeIssues[0].count > 0) {
+      throw new Error(`Ne možete obrisati artikal koji ima aktivna zaduženja. Molimo prvo razdužite sve radnike.`);
+    }
+
+    // Store item info for logging
+    const itemInfo = {
+      name: item.name,
+      sku: item.sku,
+      qty_on_hand: item.qty_on_hand,
+    };
+
+    // Temporarily disable foreign keys to allow deletion
+    await executeQuery('PRAGMA foreign_keys = OFF');
+
+    try {
+      // Delete in correct order
+      // 1. Delete stock ledger entries
+      await executeQuery('DELETE FROM stock_ledger WHERE item_id = ?', [itemId]);
+
+      // 2. Delete stock balance
+      await executeQuery('DELETE FROM stock_balances WHERE item_id = ?', [itemId]);
+
+      // 3. Delete issue history (only for inactive issues)
+      await executeQuery(
+        'DELETE FROM issue_history WHERE issue_id IN (SELECT id FROM issues WHERE item_id = ? AND is_active = 0)',
+        [itemId]
+      );
+
+      // 4. Delete ONLY inactive issues (active issues were already checked and should be 0)
+      await executeQuery('DELETE FROM issues WHERE item_id = ? AND is_active = 0', [itemId]);
+
+      // 5. Delete the item itself
+      await executeQuery('DELETE FROM items WHERE id = ?', [itemId]);
+
+      // Log activity
+      await executeQuery(
+        'INSERT INTO logs (category, action, entity, entity_id, payload, actor_user_id) VALUES (?, ?, ?, ?, ?, ?)',
+        ['inventory', 'delete_item', 'item', itemId, JSON.stringify(itemInfo), actorUserId]
+      );
+    } finally {
+      // Re-enable foreign keys
+      await executeQuery('PRAGMA foreign_keys = ON');
+    }
+
+    return { success: true };
+  } catch (error) {
+    // Make sure foreign keys are re-enabled even if there's an error
+    try {
+      await executeQuery('PRAGMA foreign_keys = ON');
+    } catch (e) {
+      console.error('Failed to re-enable foreign keys:', e);
+    }
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getStockLedger(itemId = null, limit = 100) {
   let query = `
     SELECT sl.*, i.name as item_name, i.sku, u.username
@@ -121,4 +190,3 @@ export async function getStockLedger(itemId = null, limit = 100) {
 
   return await selectQuery(query, params);
 }
-
