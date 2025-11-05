@@ -4,6 +4,7 @@ import { TeamManagement } from './TeamManagement';
 import { LogsViewer } from './LogsViewer';
 import { Statistics } from './Statistics';
 import { AppSettings } from './AppSettings';
+import { UpdateTab } from './UpdateTab';
 
 export function Admin() {
   return (
@@ -14,11 +15,12 @@ export function Admin() {
       </div>
 
       <Tabs defaultValue="stats" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-4xl">
           <TabsTrigger value="stats">Statistika</TabsTrigger>
           <TabsTrigger value="team">Radnici & Odeljenja</TabsTrigger>
           <TabsTrigger value="logs">Logovi</TabsTrigger>
           <TabsTrigger value="settings">Podesavanja</TabsTrigger>
+          <TabsTrigger value="updates">Ažuriranja</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats" className="space-y-4">
@@ -35,6 +37,10 @@ export function Admin() {
 
         <TabsContent value="settings" className="space-y-4">
           <AppSettings />
+        </TabsContent>
+
+        <TabsContent value="updates" className="space-y-4">
+          <UpdateTab />
         </TabsContent>
       </Tabs>
     </div>
