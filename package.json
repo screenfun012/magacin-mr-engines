@@ -1,6 +1,6 @@
 {
   "name": "magacin-app",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Sistem za upravljanje magacinom - MR Engines d.o.o.",
   "type": "module",
   "scripts": {

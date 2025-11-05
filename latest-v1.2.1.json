@@ -1,0 +1,13 @@
+{
+  "version": "1.2.1",
+  "notes": "Test verzija za update sistem\n\n🔧 Bugfix:\n- Uklonjena signature verifikacija (test)\n- Update sistem sada radi bez signature\n\n✅ Testiraj automatski update:\n- Admin Panel → Ažuriranja\n- Proveri za update\n- Instaliraj v1.2.1 automatski!",
+  "pub_date": "2025-11-05T15:45:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "url": "https://github.com/screenfun012/magacin-mr-engines/releases/download/v1.2.1/Magacin.-.MR.Engines_1.2.1_x64_en-US.msi"
+    },
+    "darwin-aarch64": {
+      "url": "https://github.com/screenfun012/magacin-mr-engines/releases/download/v1.2.1/Magacin.-.MR.Engines_1.2.1_aarch64.dmg"
+    }
+  }
+}

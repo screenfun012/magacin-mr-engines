@@ -235,6 +235,7 @@ export function Dashboard() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <Badge variant="success" className="text-xs">v1.2.2</Badge>
             {isFetching > 0 && (
               <div className="flex items-center gap-2 px-3 py-1 bg-brand-red/10 rounded-full animate-pulse">
                 <div className="w-2 h-2 bg-brand-red rounded-full animate-ping"></div>
