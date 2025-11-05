@@ -67,11 +67,8 @@
     },
     "updater": {
       "active": true,
-      "endpoints": [
-        "https://github.com/screenfun012/magacin-mr-engines/releases/latest/download/latest.json"
-      ],
-      "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMxNDlGMDdENTEyRjA2MzAKUldRK3JFV2pMdWNqSnVGRzFNZUpIVTc1VXZWZ09vVzlTT0p6T09VQTRHc0lCRVBSTmtPNUdYSHEK"
+      "endpoints": ["https://github.com/screenfun012/magacin-mr-engines/releases/latest/download/latest.json"],
+      "dialog": false
     }
   }
 }
