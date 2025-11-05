@@ -5,7 +5,7 @@ import { relaunch } from '@tauri-apps/plugin-process';
  * Get current app version
  */
 export function getCurrentVersion() {
-  return '1.2.0'; // This matches package.json and tauri.conf.json
+  return '1.2.1'; // This matches package.json and tauri.conf.json
 }
 
 /**

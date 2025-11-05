@@ -1,0 +1,14 @@
+{
+  "version": "1.2.0",
+  "notes": "Nova verzija sa automatskim update sistemom!\n\n✨ Nove funkcionalnosti:\n- Update Tab u Admin panelu\n- Automatsko preuzimanje update-a sa GitHub Releases\n- Progress indicator tokom preuzimanja\n- Jedan klik instalacija + restart\n- Cross-platform podrška (Windows i Mac)\n\n📥 Excel Import:\n- Uvoz podataka iz .xls i .xlsx fajlova\n- Mapiranje kolona automatski\n- Preview pre uvoza\n\n🆕 Nova polja:\n- Prodajna cena\n- Nabavna cena\n- Proizvođač\n\n📤 Export funkcionalnost:\n- PDF dokument sa memorandum formatom\n- Word dokument (.docx)\n- Excel tabela sa grafikonima",
+  "pub_date": "2025-11-05T15:30:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "url": "https://github.com/screenfun012/magacin-mr-engines/releases/download/v1.2.0/Magacin-MR-Engines_1.2.0_x64-setup.msi"
+    },
+    "darwin-aarch64": {
+      "url": "https://github.com/screenfun012/magacin-mr-engines/releases/download/v1.2.0/Magacin.-.MR.Engines_1.2.0_aarch64.dmg"
+    }
+  }
+}
+
