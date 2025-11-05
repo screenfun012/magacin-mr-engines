@@ -18,7 +18,7 @@ export function Sidebar({ activeView, onViewChange }) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
     { id: 'inventory', label: 'Magacin', icon: Package, adminOnly: false },
-    { id: 'export', label: 'Izvoz', icon: FileText, adminOnly: false },
+    { id: 'export', label: 'Izvoz i uvoz', icon: FileText, adminOnly: false },
     { id: 'admin', label: 'Admin Panel', icon: Settings, adminOnly: true },
   ];
 

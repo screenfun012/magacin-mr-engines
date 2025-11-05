@@ -28,7 +28,15 @@
           "identifier": "main-capability",
           "description": "Capability for the main window",
           "windows": ["main"],
-          "permissions": ["core:default", "sql:default", "sql:allow-load", "sql:allow-execute", "sql:allow-select"]
+          "permissions": [
+            "core:default",
+            "sql:default",
+            "sql:allow-load",
+            "sql:allow-execute",
+            "sql:allow-select",
+            "dialog:allow-save",
+            "fs:allow-write"
+          ]
         }
       ]
     }

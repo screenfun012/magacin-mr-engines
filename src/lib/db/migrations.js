@@ -153,5 +153,30 @@ export async function runMigrations() {
     WHERE i.is_active = 1
   `);
 
+  // Migration 1: Add new fields to items table (prodajna_cena, nabavna_cena, proizvodjac)
+  try {
+    // Check if columns exist
+    const columns = await db.select('PRAGMA table_info(items)');
+    const columnNames = columns.map((col) => col.name);
+    
+    if (!columnNames.includes('prodajna_cena')) {
+      await db.execute('ALTER TABLE items ADD COLUMN prodajna_cena REAL DEFAULT 0');
+      console.log('✅ Added prodajna_cena column');
+    }
+    
+    if (!columnNames.includes('nabavna_cena')) {
+      await db.execute('ALTER TABLE items ADD COLUMN nabavna_cena REAL DEFAULT 0');
+      console.log('✅ Added nabavna_cena column');
+    }
+    
+    if (!columnNames.includes('proizvodjac')) {
+      await db.execute('ALTER TABLE items ADD COLUMN proizvodjac TEXT');
+      console.log('✅ Added proizvodjac column');
+    }
+  } catch (error) {
+    // Columns might already exist, ignore error
+    console.log('Migration check:', error.message);
+  }
+
   console.log('Migrations completed successfully');
 }

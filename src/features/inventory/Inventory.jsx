@@ -30,7 +30,8 @@ import {
 } from '@/lib/services/inventoryService';
 import { createIssue, returnIssue } from '@/lib/services/issueService';
 import { getAllWorkers } from '@/lib/services/workerService';
-import { Package, Plus, Send, Undo2, AlertTriangle, Trash2 } from 'lucide-react';
+import { Package, Plus, Send, Undo2, AlertTriangle, Trash2, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { exportInventoryPDF, exportInventoryWord, exportInventoryExcel } from '@/lib/services/exportService';
 
 const UNIT_OPTIONS = ['kom', 'l', 'g', 'kg', 'm', 'par', 'pak'];
 
@@ -91,6 +92,7 @@ export function Inventory() {
 }
 
 function StockTab() {
+  const user = useAuthStore((state) => state.user);
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items'],
     queryFn: getAllItems,
@@ -99,6 +101,8 @@ function StockTab() {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const filteredItems = items.filter((item) => {
     const search = searchTerm.toLowerCase();
@@ -107,74 +111,176 @@ function StockTab() {
 
   const lowStockCount = items.filter((item) => item.qty_on_hand <= item.min_qty).length;
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Stanje magacina</CardTitle>
-            <CardDescription>Pregled svih artikala i njihovih trenutnih količina</CardDescription>
-          </div>
-          {lowStockCount > 0 && (
-            <Badge variant="destructive" className="animate-pulse">
-              {lowStockCount} ispod minimuma
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-6">
-          <Input
-            placeholder="🔍 Pretraži po nazivu ili kataloskom broju..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-md"
-          />
-        </div>
+  const handleExport = async (format) => {
+    setExporting(true);
+    try {
+      let result;
+      if (format === 'pdf') {
+        result = await exportInventoryPDF(items, {}, user);
+      } else if (format === 'word') {
+        result = await exportInventoryWord(items, {}, user);
+      } else if (format === 'excel') {
+        result = await exportInventoryExcel(items, {}, user);
+      }
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Učitavanje artikala...</p>
+      if (result?.success) {
+        toast({
+          variant: 'default',
+          title: 'Stanje magacina izvezeno',
+          description: `Fajl sačuvan: ${result.filePath}`,
+        });
+        setShowExportDialog(false);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Greška',
+          description: result?.error || 'Neuspešan izvoz',
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Greška',
+        description: error.message || 'Greška pri izvozu',
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Stanje magacina</CardTitle>
+              <CardDescription>Pregled svih artikala i njihovih trenutnih količina</CardDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              {lowStockCount > 0 && (
+                <Badge variant="destructive" className="animate-pulse">
+                  {lowStockCount} ispod minimuma
+                </Badge>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)}>
+                <Download className="mr-2 h-4 w-4" />
+                Izvezi
+              </Button>
+            </div>
           </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Naziv</TableHead>
-                  <TableHead className="font-semibold">Kat. broj</TableHead>
-                  <TableHead className="font-semibold">Kat. broj proizvođača</TableHead>
-                  <TableHead className="font-semibold">Stanje</TableHead>
-                  <TableHead className="font-semibold">M.j.</TableHead>
-                  <TableHead className="font-semibold">Min. količina</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.sku}</TableCell>
-                    <TableCell>{item.manufacturer_sku || '-'}</TableCell>
-                    <TableCell className="font-semibold">{item.qty_on_hand}</TableCell>
-                    <TableCell>{item.uom}</TableCell>
-                    <TableCell>{item.min_qty}</TableCell>
-                    <TableCell>
-                      {item.qty_on_hand <= item.min_qty ? (
-                        <Badge variant="destructive">Nisko stanje</Badge>
-                      ) : (
-                        <Badge variant="success">OK</Badge>
-                      )}
-                    </TableCell>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-6">
+            <Input
+              placeholder="🔍 Pretraži po nazivu ili kataloskom broju..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Učitavanje artikala...</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Naziv</TableHead>
+                    <TableHead className="font-semibold">Kat. broj</TableHead>
+                    <TableHead className="font-semibold">Kat. broj proizvođača</TableHead>
+                    <TableHead className="font-semibold">Proizvođač</TableHead>
+                    <TableHead className="font-semibold">Stanje</TableHead>
+                    <TableHead className="font-semibold">M.j.</TableHead>
+                    <TableHead className="font-semibold">Min. količina</TableHead>
+                    <TableHead className="font-semibold">Nabavna cena</TableHead>
+                    <TableHead className="font-semibold">Prodajna cena</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.sku}</TableCell>
+                      <TableCell>{item.manufacturer_sku || '-'}</TableCell>
+                      <TableCell>{item.proizvodjac || '-'}</TableCell>
+                      <TableCell className="font-semibold">{item.qty_on_hand}</TableCell>
+                      <TableCell>{item.uom}</TableCell>
+                      <TableCell>{item.min_qty}</TableCell>
+                      <TableCell>{item.nabavna_cena ? `${item.nabavna_cena.toFixed(2)} RSD` : '-'}</TableCell>
+                      <TableCell>{item.prodajna_cena ? `${item.prodajna_cena.toFixed(2)} RSD` : '-'}</TableCell>
+                      <TableCell>
+                        {item.qty_on_hand <= item.min_qty ? (
+                          <Badge variant="destructive">Nisko stanje</Badge>
+                        ) : (
+                          <Badge variant="success">OK</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Izvezi stanje magacina</DialogTitle>
+            <DialogDescription>Izvezite trenutno stanje magacina u željenom formatu</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <Button
+              variant="outline"
+              className="h-20 flex items-center justify-start gap-3"
+              onClick={() => handleExport('pdf')}
+              disabled={exporting}
+            >
+              <FileText className="h-8 w-8 text-brand-red" />
+              <div className="flex-1 text-left">
+                <div className="font-semibold">PDF dokument</div>
+                <div className="text-sm text-muted-foreground">Memorandum format sa logotipom</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex items-center justify-start gap-3"
+              onClick={() => handleExport('word')}
+              disabled={exporting}
+            >
+              <FileText className="h-8 w-8 text-blue-600" />
+              <div className="flex-1 text-left">
+                <div className="font-semibold">Word dokument</div>
+                <div className="text-sm text-muted-foreground">.docx format - uredivo</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex items-center justify-start gap-3"
+              onClick={() => handleExport('excel')}
+              disabled={exporting}
+            >
+              <FileSpreadsheet className="h-8 w-8 text-green-600" />
+              <div className="flex-1 text-left">
+                <div className="font-semibold">Excel tabela</div>
+                <div className="text-sm text-muted-foreground">.xlsx sa kriticnim stanjem</div>
+              </div>
+            </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportDialog(false)} disabled={exporting}>
+              Otkaži
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -197,6 +303,9 @@ function AddStockTab() {
     uom: 'kom',
     min_qty: '',
     initial_qty: '',
+    prodajna_cena: '',
+    nabavna_cena: '',
+    proizvodjac: '',
   });
 
   // Add to existing item
@@ -219,6 +328,9 @@ function AddStockTab() {
         uom: 'kom',
         min_qty: '',
         initial_qty: '',
+        prodajna_cena: '',
+        nabavna_cena: '',
+        proizvodjac: '',
       });
     },
     onError: (error) => {
@@ -258,6 +370,9 @@ function AddStockTab() {
       ...formData,
       min_qty: parseFloat(formData.min_qty),
       initial_qty: parseFloat(formData.initial_qty) || 0,
+      prodajna_cena: formData.prodajna_cena ? parseFloat(formData.prodajna_cena) : 0,
+      nabavna_cena: formData.nabavna_cena ? parseFloat(formData.nabavna_cena) : 0,
+      proizvodjac: formData.proizvodjac || null,
     };
 
     if (isNaN(data.min_qty) || data.min_qty < 0) {
@@ -265,6 +380,15 @@ function AddStockTab() {
         variant: 'destructive',
         title: 'Greška',
         description: 'Unesite validnu minimalnu količinu',
+      });
+      return;
+    }
+
+    if (data.prodajna_cena < 0 || data.nabavna_cena < 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Greška',
+        description: 'Cene moraju biti veće ili jednake 0',
       });
       return;
     }
@@ -377,6 +501,39 @@ function AddStockTab() {
                         placeholder="0"
                       />
                       <FieldDescription>Početna količina u magacinu</FieldDescription>
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="proizvodjac">Proizvođač</FieldLabel>
+                      <Input
+                        id="proizvodjac"
+                        value={formData.proizvodjac}
+                        onChange={(e) => setFormData({ ...formData, proizvodjac: e.target.value })}
+                        placeholder="Opciono"
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="nabavna_cena">Nabavna cena (RSD)</FieldLabel>
+                      <Input
+                        id="nabavna_cena"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.nabavna_cena}
+                        onChange={(e) => setFormData({ ...formData, nabavna_cena: e.target.value })}
+                        placeholder="0.00"
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="prodajna_cena">Prodajna cena (RSD)</FieldLabel>
+                      <Input
+                        id="prodajna_cena"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.prodajna_cena}
+                        onChange={(e) => setFormData({ ...formData, prodajna_cena: e.target.value })}
+                        placeholder="0.00"
+                      />
                     </Field>
                   </div>
                   <Field orientation="horizontal" className="pt-2">

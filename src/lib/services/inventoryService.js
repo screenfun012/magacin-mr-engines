@@ -33,7 +33,17 @@ export async function getLowStockItems() {
 }
 
 export async function addItem(itemData, actorUserId) {
-  const { name, sku, manufacturer_sku, uom, min_qty, initial_qty } = itemData;
+  const {
+    name,
+    sku,
+    manufacturer_sku,
+    uom,
+    min_qty,
+    initial_qty,
+    prodajna_cena,
+    nabavna_cena,
+    proizvodjac,
+  } = itemData;
 
   try {
     // Check if item already exists
@@ -44,13 +54,19 @@ export async function addItem(itemData, actorUserId) {
     }
 
     // Insert item
-    await executeQuery('INSERT INTO items (name, sku, manufacturer_sku, uom, min_qty) VALUES (?, ?, ?, ?, ?)', [
-      name,
-      sku,
-      manufacturer_sku || null,
-      uom,
-      min_qty,
-    ]);
+    await executeQuery(
+      'INSERT INTO items (name, sku, manufacturer_sku, uom, min_qty, prodajna_cena, nabavna_cena, proizvodjac) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        name,
+        sku,
+        manufacturer_sku || null,
+        uom,
+        min_qty || 0,
+        prodajna_cena || 0,
+        nabavna_cena || 0,
+        proizvodjac || null,
+      ]
+    );
 
     const newItem = await selectQuery('SELECT id FROM items WHERE sku = ?', [sku]);
     const itemId = newItem[0].id;

@@ -22,8 +22,9 @@ import { useAuthStore } from '@/lib/state/authStore';
 import { getMonthlyIssues, updateIssueQty, deleteIssue, getIssueHistory } from '@/lib/services/issueService';
 import { formatDate, formatDateTime, getMonthYearString } from '@/lib/utils';
 import { useDebounce } from '@/lib/hooks/useDebounce';
-import { CalendarIcon, Edit2, Trash2, History, Package } from 'lucide-react';
+import { CalendarIcon, Edit2, Trash2, History, Package, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns'; // Samo za yearMonth format (yyyy-MM)
+import { exportDashboardPDF, exportDashboardWord, exportDashboardExcel } from '@/lib/services/exportService';
 
 export function Dashboard() {
   const user = useAuthStore((state) => state.user);
@@ -34,6 +35,8 @@ export function Dashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const yearMonth = format(selectedMonth, 'yyyy-MM');
 
@@ -189,6 +192,43 @@ export function Dashboard() {
   const uniqueItems = new Set(issues.map((i) => i.item_id)).size;
   const isFetching = useIsFetching({ queryKey: ['issues', yearMonth] });
 
+  const handleExport = async (format) => {
+    setExporting(true);
+    try {
+      let result;
+      if (format === 'pdf') {
+        result = await exportDashboardPDF(issues, yearMonth, user);
+      } else if (format === 'word') {
+        result = await exportDashboardWord(issues, yearMonth, user);
+      } else if (format === 'excel') {
+        result = await exportDashboardExcel(issues, yearMonth, user);
+      }
+
+      if (result?.success) {
+        toast({
+          variant: 'default',
+          title: 'Izveštaj izvezen',
+          description: `Fajl sačuvan: ${result.filePath}`,
+        });
+        setShowExportDialog(false);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Greška',
+          description: result?.error || 'Neuspešan izvoz',
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Greška',
+        description: error.message || 'Greška pri izvozu',
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -205,6 +245,10 @@ export function Dashboard() {
           <p className="text-muted-foreground">Pregled zaduženja po radnicima • Automatsko osvežavanje</p>
         </div>
         <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={() => setShowExportDialog(true)}>
+            <Download className="mr-2 h-4 w-4" />
+            Izvezi izveštaj
+          </Button>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-64">
@@ -314,6 +358,61 @@ export function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Izvezi izveštaj</DialogTitle>
+            <DialogDescription>
+              Izvezite zaduženja za mesec {getMonthYearString(selectedMonth)} u željenom formatu
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <Button
+              variant="outline"
+              className="h-20 flex items-center justify-start gap-3"
+              onClick={() => handleExport('pdf')}
+              disabled={exporting}
+            >
+              <FileText className="h-8 w-8 text-brand-red" />
+              <div className="flex-1 text-left">
+                <div className="font-semibold">PDF dokument</div>
+                <div className="text-sm text-muted-foreground">Memorandum format sa logotipom</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex items-center justify-start gap-3"
+              onClick={() => handleExport('word')}
+              disabled={exporting}
+            >
+              <FileText className="h-8 w-8 text-blue-600" />
+              <div className="flex-1 text-left">
+                <div className="font-semibold">Word dokument</div>
+                <div className="text-sm text-muted-foreground">.docx format - uredivo</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex items-center justify-start gap-3"
+              onClick={() => handleExport('excel')}
+              disabled={exporting}
+            >
+              <FileSpreadsheet className="h-8 w-8 text-green-600" />
+              <div className="flex-1 text-left">
+                <div className="font-semibold">Excel tabela</div>
+                <div className="text-sm text-muted-foreground">.xlsx sa grafikonima i statistikom</div>
+              </div>
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportDialog(false)} disabled={exporting}>
+              Otkaži
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingIssue} onOpenChange={() => setEditingIssue(null)}>
