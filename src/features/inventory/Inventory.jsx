@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, useIsFetching } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { searchItems } from '@/lib/utils/searchUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -104,10 +105,7 @@ function StockTab() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const filteredItems = items.filter((item) => {
-    const search = searchTerm.toLowerCase();
-    return item.name?.toLowerCase().includes(search) || item.sku?.toLowerCase().includes(search);
-  });
+  const filteredItems = searchItems(items, searchTerm);
 
   const lowStockCount = items.filter((item) => item.qty_on_hand <= item.min_qty).length;
 
@@ -173,7 +171,7 @@ function StockTab() {
         <CardContent>
           <div className="mb-6">
             <Input
-              placeholder="🔍 Pretraži po nazivu ili kataloskom broju..."
+              placeholder="🔍 Pretraži po nazivu, kataloskom broju, proizvođaču..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-md"

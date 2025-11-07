@@ -1,0 +1,11 @@
+{
+  "version": "1.2.3",
+  "notes": "🔍 Poboljšana pretraga!\n\n✨ Nove funkcionalnosti:\n- Pretraga sada podržava srpska slova (č,ć,ž,š,đ)\n- Pretraga radi i sa brojevima (kataloški broj)\n- Pretraga u više polja: naziv, kataloški broj, proizvođač\n- Bolja normalizacija teksta za pretragu\n\n📝 Primeri:\n- Pretraži \"čep\" i naći će i \"cep\"\n- Pretraži \"123\" i naći će artikle sa kataloškim brojem koji sadrži 123\n- Pretraži \"Bosch\" i naći će sve artikle proizvođača Bosch",
+  "pub_date": "2025-11-06T15:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "url": "https://github.com/screenfun012/magacin-mr-engines/releases/download/v1.2.3/Magacin-MR-Engines_1.2.3_x64_en-US.msi",
+      "signature": ""
+    }
+  }
+}

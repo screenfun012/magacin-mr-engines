@@ -8,9 +8,8 @@ import { toast } from '@/components/ui/use-toast';
 import {
   checkForUpdates,
   downloadAndInstallUpdate,
-  restartApp,
   getCurrentVersion,
-} from '@/lib/services/updateService';
+} from '@/lib/services/customUpdateService';
 import { Download, RefreshCw, CheckCircle2, AlertCircle, Loader2, Rocket } from 'lucide-react';
 
 export function UpdateTab() {
@@ -95,15 +94,13 @@ export function UpdateTab() {
     }
   };
 
-  const handleRestart = async () => {
-    const result = await restartApp();
-    if (!result.success) {
-      toast({
-        variant: 'destructive',
-        title: 'Greška',
-        description: result.error || 'Greška pri restartovanju aplikacije',
-      });
-    }
+  const handleInstall = async () => {
+    // Install will automatically close the app
+    toast({
+      variant: 'default',
+      title: 'Instalacija',
+      description: 'Instalacija se pokreće... Aplikacija će se zatvoriti.',
+    });
   };
 
   const formatFileSize = (bytes) => {
@@ -226,20 +223,13 @@ export function UpdateTab() {
             )}
 
             {installed && (
-              <div className="space-y-4">
-                <Alert>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <AlertTitle>Update instaliran!</AlertTitle>
-                  <AlertDescription>
-                    Nova verzija je uspešno instalirana. Restartujte aplikaciju da primeni izmene.
-                  </AlertDescription>
-                </Alert>
-
-                <Button onClick={handleRestart} className="w-full" size="lg" variant="default">
-                  <Rocket className="mr-2 h-4 w-4" />
-                  Restartuj aplikaciju
-                </Button>
-              </div>
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Instalacija pokrenuta!</AlertTitle>
+                <AlertDescription>
+                  Instalacija je uspešno pokrenuta. Aplikacija će se automatski zatvoriti i instalirati novu verziju.
+                </AlertDescription>
+              </Alert>
             )}
           </CardContent>
         </Card>

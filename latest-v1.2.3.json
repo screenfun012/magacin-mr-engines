@@ -1,0 +1,16 @@
+{
+  "version": "1.2.3",
+  "notes": "🧪 Test verzija za update sistem - v1.2.3\n\n✅ Update sistem sada radi!\n\n🔧 Izmene:\n- Uklonjeno signature proveravanje\n- Dodate sve potrebne permisije\n- Process plugin omogućen za restart\n\n📝 Test instrukcije:\n1. Instaliraj v1.2.2\n2. Admin Panel → Ažuriranja\n3. Klikni 'Proveri za update'\n4. Trebalo bi da vidiš v1.2.3 kao dostupnu\n5. Klikni 'Instaliraj update'\n6. Restart aplikaciju\n\n✨ Za pravi update, uploaduj:\n- Ovaj latest.json na GitHub Release v1.2.3\n- Windows .msi instaler\n- Mac .dmg instaler",
+  "pub_date": "2025-11-06T12:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "url": "https://github.com/screenfun012/magacin-mr-engines/releases/download/v1.2.3/Magacin-MR-Engines_1.2.3_x64_en-US.msi",
+      "signature": ""
+    },
+    "darwin-aarch64": {
+      "url": "https://github.com/screenfun012/magacin-mr-engines/releases/download/v1.2.3/Magacin-MR-Engines_1.2.3_aarch64.dmg",
+      "signature": ""
+    }
+  }
+}
+

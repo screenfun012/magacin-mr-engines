@@ -1,0 +1,85 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run tauri:build
+
+      - name: Get version from tag
+        id: version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create latest.json
+        shell: bash
+        run: |
+          cat > latest.json << EOF
+          {
+            "version": "${{ steps.version.outputs.VERSION }}",
+            "notes": "Automatski release verzije ${{ steps.version.outputs.VERSION }}",
+            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platforms": {
+              "windows-x86_64": {
+                "url": "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/Magacin-MR-Engines_${{ steps.version.outputs.VERSION }}_x64_en-US.msi",
+                "signature": ""
+              }
+            }
+          }
+          EOF
+
+      - name: Rename MSI file
+        shell: bash
+        run: |
+          cd "src-tauri/target/release/bundle/msi"
+          for file in *.msi; do
+            mv "$file" "../../../../Magacin-MR-Engines_${{ steps.version.outputs.VERSION }}_x64_en-US.msi"
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            Magacin-MR-Engines_${{ steps.version.outputs.VERSION }}_x64_en-US.msi
+            latest.json
+          body: |
+            ## 🚀 Verzija ${{ steps.version.outputs.VERSION }}
+            
+            ### 📦 Instalacija
+            Preuzmite `.msi` fajl i instalirajte aplikaciju.
+            
+            ### 🔄 Update
+            Ako već imate instaliranu aplikaciju, možete je ažurirati kroz Admin Panel → Ažuriranja.
+            
+            ---
+            *Automatski generisan release*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

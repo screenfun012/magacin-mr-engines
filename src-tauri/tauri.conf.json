@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "Magacin - MR Engines",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "identifier": "com.mrengines.magacin",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -26,28 +26,36 @@
       "capabilities": [
         {
           "identifier": "main-capability",
-          "description": "Capability for the main window",
-          "windows": ["main"],
+          "windows": [
+            "main"
+          ],
           "permissions": [
             "core:default",
+            "core:window:default",
             "sql:default",
             "sql:allow-load",
             "sql:allow-execute",
             "sql:allow-select",
+            "dialog:default",
             "dialog:allow-save",
-            "fs:allow-write",
-            "updater:default",
-            "updater:allow-check",
-            "updater:allow-download-and-install"
+            "fs:default",
+            "fs:allow-write"
           ]
         }
       ]
-    }
+    },
+    "withGlobalTauri": true
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
@@ -63,12 +71,9 @@
   },
   "plugins": {
     "sql": {
-      "preload": ["sqlite:app.db"]
-    },
-    "updater": {
-      "active": true,
-      "endpoints": ["https://github.com/screenfun012/magacin-mr-engines/releases/latest/download/latest.json"],
-      "dialog": false
+      "preload": [
+        "sqlite:app.db"
+      ]
     }
   }
 }
